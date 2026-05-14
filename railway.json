@@ -6,6 +6,6 @@
   "deploy": {
     "startCommand": "pnpm tsx server/_core/index.ts",
     "restartPolicyType": "on_failure",
-    "restartPolicyMaxRetries": 10
+    "restartPolicyMaxRetries": 5
   }
 }
